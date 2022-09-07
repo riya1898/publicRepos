@@ -1,0 +1,17 @@
+from pip._vendor import requests
+
+github_username  = input("Enter Github username: ")   
+print(github_username)
+
+#api url to grab public user repositories
+api_url = f"https://api.github.com/users/{github_username}/repos"
+
+#send get request
+response = requests.get(api_url)
+
+#get the json data
+data =  response.json()
+
+for repository in data:
+    print(repository["name"])
+
