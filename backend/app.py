@@ -7,37 +7,50 @@ app = Flask(__name__)
 data = []
 repositoryDataFromDb = []
 
-# github_username = alex
-github_username  = input("Enter Github username: ")   
-print(github_username)
 
 print("before username")
-con = sqlite3.connect("repository.db")
-
-with open('schema.sql') as f:
-    con.executescript(f.read())
-
-cur = con.cursor()
 
 print("after connection")
-#api url to grab public user repositories
-api_url = f"https://api.github.com/users/{github_username}/repos"
 
-#send request to Github API to get data
-response = requests.get(api_url)
+def storeData(github_username):
+    con = sqlite3.connect("repository.db")
+    with open('schema.sql') as f:
+        con.executescript(f.read())
+    cur = con.cursor()
+    api_url1 = f"https://api.github.com/users/{github_username}/repos?per_page=100&page=1"
+    api_url2 = f"https://api.github.com/users/{github_username}/repos?per_page=100&page=2"
+    api_url3 = f"https://api.github.com/users/{github_username}/repos?per_page=100&page=3"
 
-#response comes as JSON data
-data =  response.json()
+    response1 = requests.get(api_url1)
+    print(response1.json(), "response")
+    data1 =  response1.json()
 
-#store data into repository database
-for repository in data:
-    # print(repository["name"])
-    key = github_username
-    value = repository["name"]
-    cur.execute("INSERT INTO repository(username, respositoryname) VALUES(?,?)", (key, value))
+    response2 = requests.get(api_url2)
+    print(response2.json(), "response")
+    data2 =  response2.json()
 
-con.commit()
-con.close()
+    response3 = requests.get(api_url3)
+    print(response3.json(), "response")
+    data3 =  response3.json()
+    # store data into repository database
+
+    for repository in data1:
+        key = github_username
+        value = repository["name"]
+        cur.execute("INSERT INTO repository(username, respositoryname) VALUES(?,?)", (key, value))
+    
+    for repository in data2:
+        key = github_username
+        value = repository["name"]
+        cur.execute("INSERT INTO repository(username, respositoryname) VALUES(?,?)", (key, value))
+    
+    for repository in data3:
+        key = github_username
+        value = repository["name"]
+        cur.execute("INSERT INTO repository(username, respositoryname) VALUES(?,?)", (key, value))
+
+    con.commit()
+    con.close()
 
 
 def getDbConnection():
@@ -46,19 +59,27 @@ def getDbConnection():
     return con
 
 
-@app.route('/home')
-def index():
+@app.route('/home/<uname>',  methods=('GET', 'POST'),)
+def index(uname):
+    userData = getData(uname)
+    if len(userData) == 0:
+        storeData(uname)
+        userData = getData(uname)
+    
+    print(userData)
+    return userData
+
+def getData(uname):
+    getRepoData = []
     con = getDbConnection()
     cur = con.cursor()
-    publicRepository = cur.execute('SELECT * FROM repository;').fetchall()
-    print("Repos from git",publicRepository)
+    publicRepository = cur.execute("SELECT * FROM repository WHERE username = '"+uname+"'").fetchall()
     con.commit()
     con.close()
+    
     for row in publicRepository:
-        # dataString = json.dumps([x for x in row])
-        # print(dataString)
-        # data.append(dataString)
-        # print(data)
-        repositoryDataFromDb.append(row)
-    print(repositoryDataFromDb)
-    return repositoryDataFromDb
+        getRepoData.append(row)
+    
+    return getRepoData
+
+
