@@ -61,28 +61,35 @@ function App() {
 
 
   return (
-    <div style = {{backgroundColor: "#a9a9a9"}}>
-      <header>
-      <Box component="span" sx={{
-        width: '100%',
-        height: 300,
-        backgroundColor: 'black',}}>
-        Welcome!
-      </Box> 
-      <form onSubmit = {handleSubmit}>
-          <label> Enter Github Username :
-              <input type = "text" id = "name" name = "githubUsername" onChange = {(e) => setName(e.target.value)} />
-          </label>
-        <p>To get your repository details: </p><button type ="submit">Click here</button>
-      </form>
-
-        <button onClick ={next}> Next </button> 
-        <button onClick = {previous}> Previous </button>
-
-        { repositoryData && (
-        <Box sx={{ flexGrow: 1 }}>
+    
+    <div style = {{backgroundColor: "#140005"}}>
+      <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={2} style= {{ padding: '25px 25px'}}>
-          { repositoryData.map((repo) =>  { return (    
+          <Grid item xs={12} md ={12} >
+          <Box component="span" sx={{
+            width: '100%',
+            height: 300,
+            textAlign: 'center',
+            fontSize: '30px'}}>
+            <h1 style={{ color: 'white'}}>Welcome!</h1>
+          </Box> 
+          </Grid>
+
+          <Grid item xs={12} md ={12} >
+          <form onSubmit = {handleSubmit}>
+              <h2 style={{color:'white', marginRight:'10px'}}> Enter Github Username 
+                  <input style = {{ height: '25px', borderRadius:'5px', marginLeft:'10px'}} type = "text" id = "name" name = "githubUsername" onChange = {(e) => setName(e.target.value)} />
+            <button  style = {{ height: '35px', borderRadius:'5px', marginLeft:'10px'}} type ="submit">Get repository details</button>
+            </h2>
+          </form>
+          </Grid>
+          
+        <Grid style = {{ textAlign:'right', marginBottom :'30px'}} item xs={12} md ={12} >
+        <button  style = {{ borderRadius:'5px', marginLeft:'10px', marginRight:'15px'}} onClick ={previous}> <h2> Previous </h2></button> 
+        <button  style = {{ borderRadius:'5px', marginRight:'30px',}} onClick = {next}> <h2> Next </h2> </button>
+        </Grid>
+            
+            {  repositoryData &&   repositoryData.map((repo) =>  { return (    
             <Grid item xs={4} md ={3} >
             <Card sx={{ maxWidth: 345 }}>
                 <CardContent>
@@ -101,10 +108,9 @@ function App() {
               </Card>
             </Grid>
             ) } ) }
-          </Grid>
+            
+        </Grid>
         </Box>
-        )}
-      </header>
     </div>
   );
 }

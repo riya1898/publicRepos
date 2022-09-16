@@ -22,20 +22,11 @@ def storeData(github_username, pageNumber):
     con = sqlite3.connect("repository.db")
     cur = con.cursor()
     api_url1 = f"https://api.github.com/users/{github_username}/repos?per_page={perPageRecs}&page={pageNumber + 1}"
-    # api_url2 = f"https://api.github.com/users/{github_username}/repos?per_page=100&page=2"
-    # api_url3 = f"https://api.github.com/users/{github_username}/repos?per_page=100&page=3"
-
+    
     response1 = requests.get(api_url1)
     # print(response1.json(), "response")
     data1 =  response1.json()
 
-    # response2 = requests.get(api_url2)
-    # print(response2.json(), "response")
-    # data2 =  response2.json()
-
-    # response3 = requests.get(api_url3)
-    # print(response3.json(), "response")
-    # data3 =  response3.json()
     # store data into repository database
 
     start = pageNumber * perPageRecs
@@ -45,16 +36,7 @@ def storeData(github_username, pageNumber):
         value = repository["name"]
         cur.execute("INSERT INTO repository(id, username, respositoryname) VALUES(?,?,?)", (start, key, value))
         start = start+1
-    # for repository in data2:
-    #     key = github_username
-    #     value = repository["name"]
-    #     cur.execute("INSERT INTO repository(username, respositoryname) VALUES(?,?)", (key, value))
-    
-    # for repository in data3:
-    #     key = github_username
-    #     value = repository["name"]
-    #     cur.execute("INSERT INTO repository(username, respositoryname) VALUES(?,?)", (key, value))
-
+        
     con.commit()
     con.close()
 
@@ -68,11 +50,11 @@ def getPageNumber(uname):
     con = sqlite3.connect("repository.db")
     cur = con.cursor()
     pageNumber = cur.execute("SELECT * FROM userpages WHERE username= '"+uname+"' ").fetchall()
-    # print("here",pageNumber)
+    print("here",pageNumber)
     for p in pageNumber:
         page = p[1]
         return page
-    return 0
+    return -1
 
 
 def configurePage(uname, pagelabel):
@@ -81,15 +63,17 @@ def configurePage(uname, pagelabel):
     cur = con.cursor()
     # print(page)
     if page == -1:
-        # print("inside if")
+        print("inside if")
         page = 0
         cur.execute("INSERT INTO userpages(username, pagenumber)  VALUES(?,?)", (uname, 0))
     
     else :
         if pagelabel == "n":
             page = page + 1
-        elif pagelabel == "p":
+        elif pagelabel == "p" and page > 0:
             page = page -1
+        elif pagelabel == "d" :
+            page = 0
         cur.execute("UPDATE userpages SET pagenumber=? where username =?", (page, uname))
     con.commit()
     con.close()
@@ -104,12 +88,6 @@ def index():
     createDb()
     print("pagelabel", pageLabel)
     pageNumber = configurePage(uname, pageLabel)
-    if pageLabel =="p" and pageNumber > 0:
-        pageNumber-= 1
-    
-    elif pageLabel == "n":
-        pageNumber+= 1
-
     userData = getData(uname, pageNumber)
     if len(userData) == 0:
         storeData(uname, pageNumber)
