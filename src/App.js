@@ -34,7 +34,7 @@ function App() {
   const [date, setDate] = useState(dayjs('1970-01-011T21:11:54'));
   const [searchInput, setSearchInput] = useState('');
   const [filteredResults, setFilteredResults] = useState([]);
-
+  const [errorCode, errorData] =useState(0)
   
   let handleSubmit = async (event) => {
     event.preventDefault();
@@ -73,14 +73,32 @@ const searchItems = (searchValue) => {
       url:"/home?uname=" +username+ "&&page=" +pageLabel+ "&&date=" +date
     })
     .then((response) => {
-      const repositoryData = response.data
-      setRepoData(response.data)
-      console.log(repositoryData)
+      errorData(response.status)
+      if(response.status == 200) {
+        const repositoryData = response.data
+        setRepoData(repositoryData)
+        errorCode = 200
+        setName(repositoryData.name)
+        console.log(response.status)
+      }
+    }, (error) => {
+      console.log(error.response)
+      errorCode = error.response.status
+      errorData(error.response.status)
+      console.log(errorCode)
+
     }).catch((error) => {
+      console.log(error)
       if (error.response) {
         console.log(error.response)
+        errorCode = error.response.status
+        console.log(errorCode)
+        errorData(error.response.status)
+        console.log("Reaching end of line")
         }
     })
+    console.log(errorCode)
+    console.log("Ending function call")
   }
 
   
@@ -154,7 +172,7 @@ const searchItems = (searchValue) => {
         <button  style = {{ height: '30px', width: '80px', borderRadius:'5px', marginRight:'30px',}} onClick = {next}> Next </button>
         </Grid>
     
-        { repositoryData  && repositoryData.map((repo) =>  { return (    
+        { repositoryData &&   ( repositoryData.map((repo) =>  { return (    
             <Grid item xs={4} md ={3} >
             <Card sx={{ maxWidth: 345, height: '16vw' }}>
                 <CardContent>
@@ -171,9 +189,23 @@ const searchItems = (searchValue) => {
               </Card>
             </Grid>
             ) } )
-        }
+        ) 
+      }  
+       { errorCode != 200 &&
+       (
+          <Grid item xs={12} md ={12} >
+          <Card sx={{ height: '3vw', textAlign: 'çenter'}}>
+              <CardContent>
+                <label> Enter a github username </label>
+                <label> Or click the link above to check usernames </label>
+              </CardContent>
+            </Card>
+          </Grid>
+       )
+       }
         
-          { searchInput.length > 1 ? ( filteredResults.map((repo) =>  { return (    
+        
+          {/* { searchInput.length > 1 ? ( filteredResults.map((repo) =>  { return (    
             <Grid item xs={4} md ={3} >
             <Card sx={{ maxWidth: 345, height: '16vw' }}>
                 <CardContent>
@@ -209,7 +241,7 @@ const searchItems = (searchValue) => {
                 </Card>
               </Grid>
               ) } ) )
-           } 
+           }  */}
 
             
         </Grid>

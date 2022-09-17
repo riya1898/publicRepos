@@ -76,7 +76,7 @@ def getPageNumber(uname):
     con = sqlite3.connect("repository.db")
     cur = con.cursor()
     pageNumber = cur.execute("SELECT * FROM userpages WHERE username= '"+uname+"' ").fetchall()
-    print("here",pageNumber)
+    # print("here",pageNumber)
     for p in pageNumber:
         page = p[1]
         return page
@@ -89,7 +89,7 @@ def configurePage(uname, pagelabel):
     cur = con.cursor()
     # print(page)
     if page == -1:
-        print("inside if")
+        # print("inside if")
         page = 0
         cur.execute("INSERT INTO userpages(username, pagenumber)  VALUES(?,?)", (uname, 0))
     
@@ -108,7 +108,8 @@ def configurePage(uname, pagelabel):
 
 def validateDate(date_text):
     try:
-        if date_text != datetime.strptime(date_text, "YYYY-MM-DD").strftime('YYYY-MM-DD'):
+        if date_text == datetime.strptime(date_text, "YYYY-MM-DD").strftime('YYYY-MM-DD'):
+            print("here date",datetime.strptime(date_text, "YYYY-MM-DD").strftime('YYYY-MM-DD'))
             raise ValueError
         return True
     except ValueError:
@@ -125,25 +126,37 @@ def index():
     pageLabel = args['page']
     date = args['date']
     createDb()
-    print("date", date)
+    # print("date", date)
     
-    if validateDate(date):
-        print("date validated")
-        res = True
-    else:
-        res = False
-
-    if pageLabel == 'n' or pageLabel == 'p' or pageLabel == 'd' and res == True :
+    # if validateDate(date):
+    #     print("date validated")
+    #     res = True
+    # else:
+    #     res = False
+    # return "Success", 400
+    if pageLabel == 'n' or pageLabel == 'p' or pageLabel == 'd' or res == True :
         print("condition1")
         pageNumber = configurePage(uname, pageLabel)
         userData = getData(uname, pageNumber, date)
-    
+        
         if len(userData) == 0:
             storeData(uname)
             userData = getData(uname, pageNumber, date)
     
         print(userData)
-    return userData
+        return userData
+    else:
+        userData = {
+            "status":"Invalid input arguments",
+            "error":400,
+            "message":"Please input page as p,n or d and date in YYYY-MM-DD format"
+        }
+        return userData
+    # else :
+    #     return response = {
+    #         "error":"Please enter page label as p, n or d",
+    #         "status": 500
+    #     }
 
 
 def getData(uname, pageNumber, date):
@@ -154,7 +167,7 @@ def getData(uname, pageNumber, date):
 
     start = pageNumber * perPageRecs
     end = start + perPageRecs
-    print(date)
+    # print(date)
     # publicRepository = cur.execute("SELECT * FROM repository WHERE username = '"+uname+"' AND id BETWEEN '"+str(start)+"' AND '"+str(end)+"' ").fetchall()
     # print("publicRepository")
     publicRepository = cur.execute("SELECT DISTINCT * FROM repository where username = '"+uname+"' and createdAt >= '"+date+"' ORDER BY createdAt LIMIT '"+str(perPageRecs)+"' OFFSET '"+str(start)+"' ").fetchall()
