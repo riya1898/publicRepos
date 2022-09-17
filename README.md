@@ -68,3 +68,18 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+1) Make sure you have npm and node installed like above
+
+2) Install Flask and Flask environment from https://flask.palletsprojects.com/en/2.2.x/installation/
+
+3) Install Flask dependencies and React libraries such as material ui, material icons, days, moment and react-bootstrap.
+
+4) then cd Backend and run 'python -m flask run'
+- If succesful, open another terminal and keep this environment running
+
+5)In the codingTest folder run 'npm install'
+
+6) Finally run 'npm run start'
+
+7) If no errors then SPA is running on "http://localhost:3000"
