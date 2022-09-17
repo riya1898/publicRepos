@@ -5,41 +5,67 @@ import json
 from pip._vendor import requests
 from flask import request
 from flask_cors import CORS, cross_origin
+from datetime import datetime
+from datetime import datetime
+
 
 app = Flask(__name__)
 CORS(app, support_credentials=True)
 data = []
 repositoryDataFromDb = []
-
 perPageRecs = 30
+userData = []
 
 def createDb():
     con = sqlite3.connect("repository.db")
     with open('schema.sql') as f:
         con.executescript(f.read())
 
-def storeData(github_username, pageNumber):
+# def storeData(github_username, pageNumber):
+#     con = sqlite3.connect("repository.db")
+#     cur = con.cursor()
+#     api_url1 = f"https://api.github.com/users/{github_username}/repos?per_page={perPageRecs}&page={pageNumber + 1}"
+    
+#     response1 = requests.get(api_url1)
+#     data1 =  response1.json()
+#     # store data into repository database
+
+#     start = pageNumber * perPageRecs
+
+#     for repository in data1:
+#         key = github_username
+#         value = repository["name"]
+#         url = repository["html_url"]
+#         desc = repository["description"]
+#         createdAt = repository["created_at"]
+#         cur.execute("INSERT INTO repository(id, username, respositoryname, repositoryURL, details, createdAt) VALUES(?,?,?,?,?,?)", (start, key, value, url, desc, createdAt))
+#         start = start+1
+
+#     con.commit()
+#     con.close()
+
+def storeData(github_username):
     con = sqlite3.connect("repository.db")
     cur = con.cursor()
-    api_url1 = f"https://api.github.com/users/{github_username}/repos?per_page={perPageRecs}&page={pageNumber + 1}"
-    
-    response1 = requests.get(api_url1)
-    # print(response1.json(), "response")
-    data1 =  response1.json()
-
-    # store data into repository database
-
-    start = pageNumber * perPageRecs
-
-    for repository in data1:
-        key = github_username
-        value = repository["name"]
-        cur.execute("INSERT INTO repository(id, username, respositoryname) VALUES(?,?,?)", (start, key, value))
-        start = start+1
-        
+    pageNumber = 1
+    start = 0
+    while(True):
+        api_url1 = f"https://api.github.com/users/{github_username}/repos?page={pageNumber}"        
+        pageNumber+=1
+        response1 = requests.get(api_url1)
+        data1 =  response1.json()
+        if(len(data1)==0):
+            break
+        for repository in data1:
+            key = github_username
+            value = repository["name"]
+            url = repository["html_url"]
+            desc = repository["description"]
+            createdAt = repository["created_at"]
+            cur.execute("INSERT INTO repository(id, username, respositoryname, repositoryURL, details, createdAt) VALUES(?,?,?,?,?,?)", (start, key, value, url, desc, createdAt))
+            start += 1
     con.commit()
     con.close()
-
 
 def getDbConnection():
     con = sqlite3.connect('repository.db')
@@ -79,43 +105,76 @@ def configurePage(uname, pagelabel):
     con.close()
     return page
 
+
+def validateDate(date_text):
+    try:
+        if date_text != datetime.strptime(date_text, "YYYY-MM-DD").strftime('YYYY-MM-DD'):
+            raise ValueError
+        return True
+    except ValueError:
+        return False
+
+
 @app.route('/home/',  methods=('GET', 'POST'))
 @cross_origin(supports_credentials=True)
 def index():
+    userData = []
+    res = True
     args = request.args
     uname = args['uname']
     pageLabel = args['page']
+    date = args['date']
     createDb()
-    print("pagelabel", pageLabel)
-    pageNumber = configurePage(uname, pageLabel)
-    userData = getData(uname, pageNumber)
-    if len(userData) == 0:
-        storeData(uname, pageNumber)
-        userData = getData(uname, pageNumber)
+    print("date", date)
     
-    # print(userData)
+    if validateDate(date):
+        print("date validated")
+        res = True
+    else:
+        res = False
+
+    if pageLabel == 'n' or pageLabel == 'p' or pageLabel == 'd' and res == True :
+        print("condition1")
+        pageNumber = configurePage(uname, pageLabel)
+        userData = getData(uname, pageNumber, date)
+    
+        if len(userData) == 0:
+            storeData(uname)
+            userData = getData(uname, pageNumber, date)
+    
+        print(userData)
     return userData
 
 
-def getData(uname, pageNumber):
+def getData(uname, pageNumber, date):
     getRepoData = []
+
     con = getDbConnection()
     cur = con.cursor() 
 
     start = pageNumber * perPageRecs
     end = start + perPageRecs
-
-    # print(start)
-    # print(end)
-
-    publicRepository = cur.execute("SELECT * FROM repository WHERE username = '"+uname+"' AND id BETWEEN '"+str(start)+"' AND '"+str(end)+"' ").fetchall()
+    print(date)
+    # publicRepository = cur.execute("SELECT * FROM repository WHERE username = '"+uname+"' AND id BETWEEN '"+str(start)+"' AND '"+str(end)+"' ").fetchall()
     # print("publicRepository")
+    publicRepository = cur.execute("SELECT DISTINCT * FROM repository where username = '"+uname+"' and createdAt >= '"+date+"' ORDER BY createdAt LIMIT '"+str(perPageRecs)+"' OFFSET '"+str(start)+"' ").fetchall()
+    print("SELECT * FROM repository where username = '"+uname+"' and createdAt >= '"+date+"' ORDER BY createdAt LIMIT '"+str(perPageRecs)+"' OFFSET '"+str(start)+"' " )
+    # print(publicRepository)
     con.commit()
     con.close()
     
     for row in publicRepository:
-        getRepoData.append(row)
+        repoDataJson = { }
+        repoDataJson['username'] =row[1]
+        repoDataJson['repositoryName'] = row[2]
+        repoDataJson['repoURL'] = row[3]
+        repoDataJson['description'] = row[4]
+        repoDataJson['createdAt'] = row[5]
+
+        getRepoData.append(repoDataJson)
+
     
+    # print(getRepoData)
     return getRepoData
 
 
